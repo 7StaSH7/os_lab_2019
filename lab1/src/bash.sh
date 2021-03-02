@@ -3,7 +3,6 @@
 echo "$PWD"
 
 dt=`date +'%d/%m/%Y %H:%M:%S'`
-echo "$dt"
-
+echo 
 echo "$PATH"
 exit 0
