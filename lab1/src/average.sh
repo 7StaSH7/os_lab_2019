@@ -1,4 +1,5 @@
-#!bin/bash
+#!/bin/sh
+
 
 echo "There are ${#} numbers"
 
@@ -8,5 +9,5 @@ for param in $@
 do
 ans=$(($ans+$param))
 done
-ans=$((ans/$#))
-echo "Arefmetic mean: ${$sum/#}"
+mean=$(($ans/$#))
+echo "Arefmetic mean: ${mean}"
