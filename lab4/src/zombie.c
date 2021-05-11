@@ -4,10 +4,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-int main() {
+int main () {
+    pid_t childPid;
 
-    pid_t pid = fork();
-    if (pid > 0) sleep(30);
-    else exit(0);
+    for (int i = 0; i < 5; i++) childPid = fork(); 
+    if (childPid == 0) exit(0); 
+    else if (childPid > 0) printf("Created a child process %d\n", childPid);
+    sleep(30);
+    
     return 0;
 }
