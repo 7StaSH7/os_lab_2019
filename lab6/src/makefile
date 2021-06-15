@@ -12,5 +12,5 @@ server: server.c factorial
 factorial: factorial.c factorial.h
 	$(CC) -c factorial.c -o factorial.o
 
-clear:
+clean:
 	rm factorial.o client server
