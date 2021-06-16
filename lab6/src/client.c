@@ -11,7 +11,7 @@
 #include <netinet/ip.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
+#include <arpa/inet.h>
 #include "factorial.h"
 
 struct Server {
@@ -95,40 +95,37 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // TODO: 
-    FILE* servers_storage = fopen(servers, "r");
+    // FILE* servers_storage = fopen(servers, "r");
 
-    if(servers_storage == NULL) printf("Can't open %s.\n", servers);
+    // if(servers_storage == NULL) printf("Can't open %s.\n", servers);
 
-  unsigned int servers_num = 0;
+  unsigned int servers_num = 1;
 
-    while(!feof(servers_storage)) {
-        if(fgetc(servers_storage) == ';')
-        servers_num++;
-    }
-    fseek(servers_storage, 0, SEEK_SET);
-  struct Server *to = (struct Server*)malloc(sizeof(struct Server) * servers_num);
+//     while(!feof(servers_storage)) {
+//         if(fgetc(servers_storage) == ';')
+//         servers_num++;
+//     }
+//     fseek(servers_storage, 0, SEEK_SET);
+//   struct Server *to = (struct Server*)malloc(sizeof(struct Server) * servers_num);
   
-  for(int i = 0; i < servers_num; i++) fscanf(servers_storage,"%s %d;", to[i].ip, &to[i].port);
+//    for(int i = 0; i < servers_num; i++) fscanf(servers_storage,"%s %d;", to[i].ip, &to[i].port);
   
-  fclose(servers_storage);
-  // TODO: work continiously, rewrite to make parallel
-  int step = k/servers_num + 1;
+//   fclose(servers_storage);
+  int step = k / servers_num + 1;
   uint64_t answer = 1;
-  for (int i = 0; i < servers_num; i++) 
-  { 
-    struct hostent *hostname = gethostbyname(to[i].ip);
-    if (hostname == NULL) {
-      fprintf(stderr, "gethostbyname failed with %s\n", to[i].ip);
-      exit(1);
-    }
+//   for (int i = 0; i < servers_num; i++) 
+    // struct hostent *hostname = getaddrinfo(to[i].ip);
+    // if (hostname == NULL) {
+    //   fprintf(stderr, "gethostbyname failed with %s\n", to[i].ip);
+    //   exit(1);
+    // }
 
-    struct sockaddr_in server;
-    server.sin_family = AF_INET;
-    server.sin_port = htons(to[i].port);
-    server.sin_addr.s_addr = *((unsigned long *)hostname->h_addr_list[0]);
+    struct sockaddr_in6 server;
+    server.sin6_family = AF_INET6;
+	inet_pton(AF_INET6, "::", &server.sin6_addr);
+	server.sin6_port = htons(45493);
 
-    int sck = socket(AF_INET, SOCK_STREAM, 0);
+    int sck = socket(AF_INET6, SOCK_STREAM, 0);
     if (sck < 0) {
       fprintf(stderr, "Socket creation failed!\n");
       exit(1);
@@ -138,14 +135,8 @@ int main(int argc, char **argv) {
       fprintf(stderr, "Connection failed\n");
       exit(1);
     }
-
-    // TODO: for one server
-    // parallel between servers
-    
-    uint64_t begin = i*step + 1 ;
-    uint64_t end = ((i+1)*step < k) ? (i+1)*step : k;
-
-
+    uint64_t begin = 1 ;
+    uint64_t end = ((1+1)*step < k) ? (1+1)*step : k;
     
 
     char task[sizeof(uint64_t) * 3];
@@ -164,19 +155,16 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
-    // TODO: from one server
-    // unite results
-
     uint64_t from = 0;
     memcpy(&from, response, sizeof(uint64_t));
     answer = MultModulo(answer, from, mod);
 
 
     close(sck);
-  }
+  
   printf("Answer: %lu\n", answer);
 
-  free(to);
+//   free(to);
 
   return 0;
 }

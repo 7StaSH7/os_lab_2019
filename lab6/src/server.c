@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -10,7 +11,8 @@
 #include <netinet/ip.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
+#include <arpa/inet.h>
+#include <net/if.h>
 #include "pthread.h"
 #include "factorial.h"
 
@@ -66,43 +68,52 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (port == -1 || tnum == -1) {
-    fprintf(stderr, "Using: %s --port 20001 --tnum 4\n", argv[0]);
-    return 1;
-  }
+    if (port == -1 || tnum == -1) {
+        fprintf(stderr, "Using: %s --port 20001 --tnum 4\n", argv[0]);
+        return 1;
+    }
+    int err;
+    union {
+        struct sockaddr_in6 sin6;
+    } server; 
+    union {
+        struct sockaddr_in6 sin6;
+    } client;
 
-  int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_fd < 0) {
-    fprintf(stderr, "Can not create server socket!\n");
-    return 1;
-  }
+    socklen_t client_size = sizeof(client);
+    socklen_t server_size = sizeof(struct sockaddr_in6);;
+    int c;
 
-  struct sockaddr_in server;
-  server.sin_family = AF_INET;
-  server.sin_port = htons((uint16_t)port);
-  server.sin_addr.s_addr = htonl(INADDR_ANY);
+    int server_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+    if (server_fd  < 0) {     
+        perror("socket failed");
+        exit (1);
+    }
 
-  int opt_val = 1;
-  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val));
+    int opt_val = 1;
+    err = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof opt_val);
+    /* initialize the server's sockaddr */
+    memset(&server, 0, server_size);
+   
+    server.sin6.sin6_family = AF_INET6;
+    server.sin6.sin6_addr = in6addr_any;
+    server.sin6.sin6_port = htons((uint16_t)port);
+    
 
-  int err = bind(server_fd, (struct sockaddr *)&server, sizeof(server));
-  if (err < 0) {
-    fprintf(stderr, "Can not bind to socket!\n");
-    return 1;
-  }
-
-  err = listen(server_fd, 128);
-  if (err < 0) {
-    fprintf(stderr, "Could not listen on socket\n");
-    return 1;
-  }
-
-  printf("Server listening at %d\n", port);
-
+    err = bind(server_fd ,(struct sockaddr *)&server, server_size);
+    if (err < 0) {
+        perror("bind failed");
+        exit(1);
+    }
+    err = listen(server_fd, 128);
+    if (err < 0) {
+        fprintf(stderr, "Could not listen on socket\n");
+        return 1;
+    }
+    printf("Server listening at %d\n", port);
   while (true) {
-    struct sockaddr_in client;
-    socklen_t client_len = sizeof(client);
-    int client_fd = accept(server_fd, (struct sockaddr *)&client, &client_len);
+
+    int client_fd = accept(server_fd, (struct sockaddr *)&client, &client_size);
 
     if (client_fd < 0) {
       fprintf(stderr, "Could not establish new connection\n");
